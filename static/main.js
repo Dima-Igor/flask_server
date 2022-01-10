@@ -5,7 +5,7 @@ $(document).ready(function() {
 
     $('.handle-form').submit(function(event) {
         event.preventDefault();
-        handle = $('.input-handle').val();
+        const handle = $('.input-handle').val();
         socket.send({ 'handle': handle });
     });
 
@@ -19,13 +19,15 @@ $(document).ready(function() {
 
     };
 
-    socket.on('message', function(data) {
+    socket.on('draw_stats', function(data) {
         console.log(data);
-        //2 типа смс
-        //1 - что-то посчитать 
-        //2 - результат статы
-        drawStats(data);
+        //drawStats(data);
         $('.stats-card').show();
     });
+
+
+    socket.on('run_task', function(data) {
+        alert(data);
+    })
 
 });
