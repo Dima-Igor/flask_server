@@ -2,11 +2,16 @@ from logging import debug
 from flask import Flask, render_template, url_for, redirect, session, request
 from flask_socketio import SocketIO, send
 import json
+import submission_pb2_grpc
+import submission_pb2
+import grpc
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*')
 
 clients = set()
+cf_service_addr = "localhost:8090"
+grpc_channel = grpc.insecure_channel(cf_service_addr)
 
 
 @socketio.on('connect')
@@ -38,8 +43,32 @@ def handle_message(data):
 
 
 def get_all_submissions(handle):
-    # request to cf api
-    return [{'handle': 'igor', 'kek': 'lol'}, {'handle': 'kwerwerw'}]
+    stub = submission_pb2_grpc.CodeforcesServiceStub(grpc_channel)
+    responses = stub.GetSubmissions(
+        submission_pb2.SubmissionRequest(handle=handle))
+
+    submissions = []
+    amount = 0
+
+    try:
+        for response in responses:
+            #TODO - check is user not found and other errors
+            if (response.status != "OK"):
+                print(response.status)
+
+            submissions.append({
+                'contest_id': response.contest_id,
+                'problem_index': response.problem_index,
+                'sub_time': response.sub_time,
+                'verdict': response.verdict,
+            })
+            
+            amount += 1
+    except grpc.RpcError as rpc_error:
+        print(rpc_error.code())
+
+    print(amount)
+    return submissions[:min(10, len(submissions))]
 
 
 def split_submissions(submissions, clients_count):
@@ -48,30 +77,17 @@ def split_submissions(submissions, clients_count):
 
 @app.post('/make_task')
 def make_task():
-
     json_data = request.get_json()
-
     handle = json_data['handle']
     sid = json_data['sid']
 
     submissions = get_all_submissions(handle)
-    #clients_count = 2
-    #submission_chunks = split_submissions(submissions, clients_count)
-
-    print(handle, sid)
-    # print(jsonify(submissions))
 
     for client_id in clients:
-        send_message('run_task', client_id=client_id, data=client_id)
+        send_message('run_task', client_id=client_id,
+                     data=json.dumps(submissions))
 
-    return "1", 200
-
-    #send(jsonify(submissions), broadcast=True)
-
-    #socketio.emit('task', jsonify(submissions))
-
-    # for chunk, client in zip(submission_chunks, clients):
-    # socketio.send()
+    return "OK", 200
 
 
 if __name__ == '__main__':

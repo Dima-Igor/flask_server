@@ -1,0 +1,20 @@
+syntax = "proto3";
+package cpdash;
+
+service CodeforcesService {
+    rpc GetSubmissions (SubmissionRequest) returns (stream SubmissionReply) {}
+}
+
+message SubmissionRequest {
+    string handle = 1;
+}
+
+message SubmissionReply {
+    string handle = 1;
+    int32 contest_id = 2;
+    string problem_index = 3;
+    int32 sub_time = 4;
+    string verdict = 5;
+    int32 problem_rating = 6;
+    string status = 7;
+}
