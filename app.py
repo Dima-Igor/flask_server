@@ -14,7 +14,7 @@ def index():
 
 @socketio.on('message')
 def handle_message(data):
-    print(f"Received {data}")
+    print(f"Received {data} from {request.sid}")
     send(data, broadcast=True)
 
 
