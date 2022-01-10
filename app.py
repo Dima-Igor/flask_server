@@ -1,10 +1,12 @@
 from logging import debug
-from flask import Flask, render_template, url_for, redirect, session, request
+from flask import Flask, render_template, url_for, redirect, session, request, make_response
 from flask_socketio import SocketIO, send
 import json
 import submission_pb2_grpc
 import submission_pb2
 import grpc
+from rabbit_scheduler import RabbitMQScheduler
+
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*')
@@ -12,6 +14,8 @@ socketio = SocketIO(app, cors_allowed_origins='*')
 clients = set()
 cf_service_addr = "localhost:8090"
 grpc_channel = grpc.insecure_channel(cf_service_addr)
+
+mq_scheduler = RabbitMQScheduler()
 
 
 @socketio.on('connect')
@@ -52,7 +56,7 @@ def get_all_submissions(handle):
 
     try:
         for response in responses:
-            #TODO - check is user not found and other errors
+            # TODO - check is user not found and other errors
             if (response.status != "OK"):
                 print(response.status)
 
@@ -62,7 +66,7 @@ def get_all_submissions(handle):
                 'sub_time': response.sub_time,
                 'verdict': response.verdict,
             })
-            
+
             amount += 1
     except grpc.RpcError as rpc_error:
         print(rpc_error.code())
@@ -73,6 +77,22 @@ def get_all_submissions(handle):
 
 def split_submissions(submissions, clients_count):
     pass
+
+
+@app.post('add_task')
+def add_task():
+    json_data = request.get_json()
+
+    handle = json_data['handle']
+    sid = json_data['sid']
+
+    task = {}
+    task['handle'] = handle
+    task['sid'] = sid
+
+    mq_scheduler.send_task(task)
+
+    return make_response("", 200)
 
 
 @app.post('/make_task')
@@ -86,8 +106,9 @@ def make_task():
     for client_id in clients:
         send_message('run_task', client_id=client_id,
                      data=json.dumps(submissions))
+        send_message('run_task', client_id=client_id, data=client_id)
 
-    return "OK", 200
+    return make_response("", 200)
 
 
 if __name__ == '__main__':
