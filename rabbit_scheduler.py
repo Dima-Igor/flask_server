@@ -54,5 +54,5 @@ sample_task = {
     'submissions' : array,
 }
 
-scheduler = RabbitMQScheduler()
-scheduler.send_task(sample_task)
+# scheduler = RabbitMQScheduler()
+# scheduler.send_task(sample_task)
