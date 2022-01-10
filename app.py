@@ -1,13 +1,15 @@
 from logging import debug
-from flask import Flask, render_template, url_for, redirect, session, request
+from flask import Flask, render_template, url_for, redirect, session, request, make_response
 from flask_socketio import SocketIO, send
 import json
+from rabbit_scheduler import RabbitMQScheduler
+
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*')
 
 clients = set()
-
+mq_scheduler = RabbitMQScheduler()
 
 @socketio.on('connect')
 def handle_connect():
@@ -46,6 +48,22 @@ def split_submissions(submissions, clients_count):
     pass
 
 
+@app.post('add_task')
+def add_task():
+    json_data = request.get_json()
+
+    handle = json_data['handle']
+    sid = json_data['sid']
+    
+    task = {}
+    task['handle'] = handle
+    task['sid'] = sid
+
+    mq_scheduler.send_task(task)
+
+    return make_response("", 200)
+
+
 @app.post('/make_task')
 def make_task():
 
@@ -64,7 +82,7 @@ def make_task():
     for client_id in clients:
         send_message('run_task', client_id=client_id, data=client_id)
 
-    return "1", 200
+    return make_response("", 200)
 
     #send(jsonify(submissions), broadcast=True)
 
