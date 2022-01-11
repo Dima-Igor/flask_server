@@ -1,5 +1,5 @@
 from logging import debug
-from flask import Flask, render_template, url_for, redirect, session, request, make_response
+from flask import Flask, render_template, url_for, redirect, session, request, jsonify, make_response
 from flask_socketio import SocketIO, send
 import json
 import submission_pb2_grpc
@@ -7,7 +7,7 @@ import submission_pb2
 import grpc
 from rabbit_scheduler import RabbitMQScheduler
 from itertools import islice
-
+import time
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*')
@@ -97,13 +97,15 @@ def split_submissions(submissions, clients_count):
 def add_task():
     json_data = request.get_json()
 
+    print(f"Add task with data : {json_data}")
+
     handle = json_data['handle']
     sid = json_data['sid']
 
     task = {}
     task['handle'] = handle
     task['sid'] = sid
-
+    
     mq_scheduler.send_task(task)
 
     return make_response("", 200)
@@ -112,6 +114,9 @@ def add_task():
 @app.post('/make_task')
 def make_task():
     json_data = request.get_json()
+
+    print(f"Make task with data : {json_data}")
+
     handle = json_data['handle']
     sid = json_data['sid']
 
@@ -129,6 +134,7 @@ def make_task():
         send_message('run_task', client_id=client_id,
                      data=json.dumps(submission_chunks[i]))
 
+    # submissions = get_all_submissions(handle)
     # for client_id in clients:
     #     send_message('run_task', client_id=client_id,
     #                  data=json.dumps(submissions))
