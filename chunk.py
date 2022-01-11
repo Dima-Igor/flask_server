@@ -1,6 +1,5 @@
 import uuid
 
-
 class Chunk:
     def __init__(self, client, body, task_id):
         self.id = uuid.uuid4().hex
@@ -45,10 +44,13 @@ class ChunkStorage:
 
     @staticmethod
     def change_client(chunk_id, sid):
+        need_to_send_chunk = []
         for chunk in ChunkStorage.chunks:
             if chunk.id == chunk_id:
                 chunk.client = sid
-                break
+                need_to_send_chunk.append(chunk)
+        
+        return need_to_send_chunk
 
 
 #ChunkStorage.register_chunk(Chunk(client = 1, body = 2))

@@ -9,6 +9,7 @@ from rabbit_scheduler import RabbitMQScheduler
 from itertools import islice
 import time
 from chunk import ChunkStorage, Chunk
+import random
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*')
@@ -29,7 +30,20 @@ def handle_connect():
 @socketio.on('disconnect')
 def handle_disconnect():
     print('Client disconnected')
+
+    sid = request.sid   
     clients.remove(request.sid)
+
+    if len(clients) == 0:
+        return
+    
+    prev_client = sid
+    cur_client = random.choice(tuple(clients))
+    
+    need_to_send = change_client(prev_client, cur_client)
+
+    for chunk in need_to_send:
+        send_message(event_name = 'run_task', client_id = cur_client, data = chunk)
 
 
 def send_message(event_name, client_id, data):
