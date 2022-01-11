@@ -43,11 +43,11 @@ class ChunkStorage:
         return True
 
     @staticmethod
-    def change_client(chunk_id, sid):
+    def change_client(prev_sid, cur_sid):
         need_to_send_chunks = []
         for chunk in ChunkStorage.chunks:
-            if chunk.id == chunk_id and not chunk.result:
-                chunk.client = sid
+            if chunk.client == prev_sid and not chunk.result:
+                chunk.client = cur_sid
                 need_to_send_chunks.append(chunk)
         
         return need_to_send_chunks

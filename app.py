@@ -11,9 +11,10 @@ import time
 from chunk import ChunkStorage, Chunk
 import random
 import uuid
+import threading
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins='*')
+socketio = SocketIO(app, cors_allowed_origins='*', async_mode = 'eventlet')
 
 clients = set()
 cf_service_addr = "localhost:8090"
@@ -40,16 +41,16 @@ def handle_disconnect():
         return
     
     prev_client = sid
-    if len(clients) == 0:
-        return
 
     #pick random client to run task, if someone disconnected
     cur_client = random.choice(tuple(clients))
     need_to_send = ChunkStorage.change_client(prev_client, cur_client)
 
+    submissions = []
     for chunk in need_to_send:
-        send_message(event_name = 'run_task', client_id = cur_client, data = chunk)
-
+        send_message(event_name = 'run_task', client_id=cur_client, data=json.dumps(
+                         {'submissions': chunk.body,
+                            'chunk_id': chunk.id}))
 
 def send_message(event_name, client_id, data):
     socketio.emit(event_name, data, room=client_id)
@@ -173,6 +174,7 @@ def get_task_result(data):
     
 @app.post('/make_task')
 def make_task():
+
     json_data = request.get_json()
 
     print(f"Make task with data : {json_data}")
@@ -182,7 +184,7 @@ def make_task():
 
     if sid not in clients:
         return make_response("Client not found",200)
-        
+
     # handle if something went wrong
     status, submissions = get_all_submissions(handle)
     if not status:
@@ -219,4 +221,4 @@ def make_task():
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app)
