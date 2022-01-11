@@ -18,7 +18,7 @@ cf_service_addr = "localhost:8090"
 grpc_channel = grpc.insecure_channel(cf_service_addr)
 
 
-#mq_scheduler = RabbitMQScheduler()
+mq_scheduler = RabbitMQScheduler()
 
 @socketio.on('connect')
 def handle_connect():
