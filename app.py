@@ -6,6 +6,7 @@ import submission_pb2_grpc
 import submission_pb2
 import grpc
 from rabbit_scheduler import RabbitMQScheduler
+from itertools import islice
 
 
 app = Flask(__name__)
@@ -15,7 +16,7 @@ clients = set()
 cf_service_addr = "localhost:8090"
 grpc_channel = grpc.insecure_channel(cf_service_addr)
 
-mq_scheduler = RabbitMQScheduler()
+#mq_scheduler = RabbitMQScheduler()
 
 
 @socketio.on('connect')
@@ -40,10 +41,14 @@ def index():
     return render_template('index.html')
 
 
-@socketio.on('message')
+@socketio.on('create_task')
 def handle_message(data):
-    print(f"Received {data} from {request.sid}")
-    send(data, broadcast=True)
+    json_data = data.json()
+    print(json_data)
+    print(type(json_data))
+
+    #print(f"Received {data} from {request.sid}")
+    #send(data, broadcast=True)
 
 
 def get_all_submissions(handle):
@@ -65,6 +70,7 @@ def get_all_submissions(handle):
                 'problem_index': response.problem_index,
                 'sub_time': response.sub_time,
                 'verdict': response.verdict,
+                'rating': response.problem_rating
             })
 
             amount += 1
@@ -72,11 +78,19 @@ def get_all_submissions(handle):
         print(rpc_error.code())
 
     print(amount)
-    return submissions[:min(10, len(submissions))]
+    return submissions
+
+
+def chunks(l, n):
+    """Yield n number of sequential chunks from l."""
+    d, r = divmod(len(l), n)
+    for i in range(n):
+        si = (d+1)*(i if i < r else r) + d*(0 if i < r else i - r)
+        yield l[si:si+(d+1 if i < r else d)]
 
 
 def split_submissions(submissions, clients_count):
-    pass
+    return list(chunks(submissions, clients_count))
 
 
 @app.post('/add_task')
@@ -101,7 +115,19 @@ def make_task():
     handle = json_data['handle']
     sid = json_data['sid']
 
-    # submissions = get_all_submissions(handle)
+    # handle if we didn't get any submisisons
+    submissions = get_all_submissions(handle)
+
+    clients_count = min(len(clients), len(submissions))
+    submission_chunks = split_submissions(submissions, clients_count)
+
+    print(clients_count)
+
+    for i, client_id in enumerate(clients):
+        if i >= clients_count:
+            break
+        send_message('run_task', client_id=client_id,
+                     data=json.dumps(submission_chunks[i]))
 
     # for client_id in clients:
     #     send_message('run_task', client_id=client_id,
