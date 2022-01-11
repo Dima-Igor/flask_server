@@ -6,9 +6,22 @@ $(document).ready(function() {
     $('.handle-form').submit(function(event) {
         event.preventDefault();
         const handle = $('.input-handle').val();
+        //disable input form
+        $('.input-handle').prop('disabled', true);
+        $('.stats-card').hide();
+
         socket.emit('add_task', { 'handle': handle });
     });
 
+
+    liStats = ['.solved-tasks', '.solved-rated', '.average-rating', '.ok-count', '.wa-count', '.ml-count', '.tl-count', ]
+
+    function hideStats() {
+        for (li of liStats) {
+            $(`${li}`).hide();
+        }
+        $('.error').hide();
+    }
 
     function drawStats(stats) {
         $('.solved-tasks').text(`Количество решенных задач: ${stats.solvedTasks}`);
@@ -19,7 +32,12 @@ $(document).ready(function() {
         $('.ml-count').text(`Количество посылок со статусом Memory limit: ${stats.mlCount}`);
         $('.tl-count').text(`Количество посылок со статусом Time limit: ${stats.tlCount}`);
 
+        for (li of liStats) {
+            $(`${li}`).show();
+        }
+
     };
+
 
     function calcStats(submissions) {
         const statsResult = {
@@ -66,29 +84,36 @@ $(document).ready(function() {
 
     socket.on('draw_stats', function(data) {
         const stats = jQuery.parseJSON(data);
-        drawStats(stats);
+        $('.input-handle').prop('disabled', false);
+        //hide everything
+        hideStats();
+        if (stats.error) {
+            $('.error').text(stats.error);
+            $('.error').show();
+        } else {
+            drawStats(stats);
+        }
         $('.stats-card').show();
     });
 
 
     socket.on('run_task', function(data) {
-
-        jsonParsed = Query.parseJSON(data);
+        jsonParsed = jQuery.parseJSON(data);
         const submissions = jsonParsed.submissions
-        const taskId = jsonPared.task_id
+        const chunkId = jsonParsed.chunk_id
         const statsResult = calcStats(submissions);
 
         socket.emit('get_task_result', {
             'result': {
                 'solvedTasks': statsResult.solvedTasks,
-                'solvedRatedTasks': stats.solvedRatedTasks,
-                'sumRating': stats.sumRating,
-                'okCount': stats.okCount,
-                'waCount': stats.waCount,
-                'mlCount': stats.mlCount,
-                'tlCount': stats.tlCount
+                'solvedRatedTasks': statsResult.solvedRatedTasks,
+                'sumRating': statsResult.sumRating,
+                'okCount': statsResult.okCount,
+                'waCount': statsResult.waCount,
+                'mlCount': statsResult.mlCount,
+                'tlCount': statsResult.tlCount
             },
-            'taskId': taskId
+            'chunkId': chunkId
         });
     })
 

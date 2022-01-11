@@ -9,7 +9,7 @@ class Chunk:
         self.task_id = task_id
 
     def __repr__(self):
-        return f'(id = {self.id}, client = {self.client}, body = {self.body})'
+        return f'(id = {self.id}, client = {self.client}, body = {self.body}, result = {self.result})'
 
 
 class ChunkStorage:
@@ -17,7 +17,7 @@ class ChunkStorage:
 
     @staticmethod
     def register_chunk(chunk):
-        ChunkStorage.chunks.add(chunk)
+        ChunkStorage.chunks.append(chunk)
         return chunk.id
 
     @staticmethod
@@ -44,13 +44,22 @@ class ChunkStorage:
 
     @staticmethod
     def change_client(chunk_id, sid):
-        need_to_send_chunk = []
+        need_to_send_chunks = []
         for chunk in ChunkStorage.chunks:
-            if chunk.id == chunk_id:
+            if chunk.id == chunk_id and not chunk.result:
                 chunk.client = sid
-                need_to_send_chunk.append(chunk)
+                need_to_send_chunks.append(chunk)
         
-        return need_to_send_chunk
+        return need_to_send_chunks
+
+    @staticmethod
+    def get_task_id(chunk_id):
+        task_id = None
+        for chunk in  ChunkStorage.chunks:
+            if chunk.id == chunk_id:
+                task_id = chunk.task_id
+                break
+        return task_id
 
 
 #ChunkStorage.register_chunk(Chunk(client = 1, body = 2))
