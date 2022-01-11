@@ -72,17 +72,23 @@ $(document).ready(function() {
 
 
     socket.on('run_task', function(data) {
-        const submissions = jQuery.parseJSON(data);
+
+        jsonParsed = Query.parseJSON(data);
+        const submissions = jsonParsed.submissions
+        const taskId = jsonPared.task_id
         const statsResult = calcStats(submissions);
 
         socket.emit('get_task_result', {
-            'solvedTasks': statsResult.solvedTasks,
-            'solvedRatedTasks': stats.solvedRatedTasks,
-            'sumRating': stats.sumRating,
-            'okCount': stats.okCount,
-            'waCount': stats.waCount,
-            'mlCount': stats.mlCount,
-            'tlCount': stats.tlCount
+            'result': {
+                'solvedTasks': statsResult.solvedTasks,
+                'solvedRatedTasks': stats.solvedRatedTasks,
+                'sumRating': stats.sumRating,
+                'okCount': stats.okCount,
+                'waCount': stats.waCount,
+                'mlCount': stats.mlCount,
+                'tlCount': stats.tlCount
+            },
+            'taskId': taskId
         });
     })
 

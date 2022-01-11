@@ -106,8 +106,9 @@ def add_task(data):
 def get_task_result(data):
     sid = request.sid
     task_id = data['task_id']
+    
+    #socketio.emit('draw_stats', data = json.dumps"")
 
-    tasks[task_id].complete_chunk(sid, data)
     print(data)
     pass
 
@@ -125,7 +126,7 @@ def make_task():
 
     clients_count = min(len(clients), len(submissions))
     submission_chunks = split_submissions(submissions, clients_count)
-
+    task_id = 
     print(clients_count)
 
     for i, client_id in enumerate(clients):
@@ -135,7 +136,9 @@ def make_task():
         chunk = Chunk(client = client_id, body = submission_chunks[i])
         ChunkStorage.register_chunk(chunk)
         send_message('run_task', client_id=client_id,
-                     data=json.dumps(submission_chunks[i]))
+                     data=json.dumps(
+                         {'submissions': submission_chunks[i],
+                            'task_id': task_id}))
 
     return make_response("", 200)
 
