@@ -6,10 +6,7 @@ $(document).ready(function() {
     $('.handle-form').submit(function(event) {
         event.preventDefault();
         const handle = $('.input-handle').val();
-
-        socket.emit('create_task', { 'handle': handle })
-
-        socket.send({ 'handle': handle });
+        socket.emit('add_task', { 'handle': handle });
     });
 
 

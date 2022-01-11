@@ -41,16 +41,6 @@ def index():
     return render_template('index.html')
 
 
-@socketio.on('create_task')
-def handle_message(data):
-    json_data = data.json()
-    print(json_data)
-    print(type(json_data))
-
-    #print(f"Received {data} from {request.sid}")
-    #send(data, broadcast=True)
-
-
 def get_all_submissions(handle):
     stub = submission_pb2_grpc.CodeforcesServiceStub(grpc_channel)
     responses = stub.GetSubmissions(
@@ -93,20 +83,21 @@ def split_submissions(submissions, clients_count):
     return list(chunks(submissions, clients_count))
 
 
-@app.post('/add_task')
-def add_task():
-    json_data = request.get_json()
+@socketio.on('add_task')
+def add_task(data):
+    json_data = data
 
     print(f"Add task with data : {json_data}")
 
     handle = json_data['handle']
-    sid = json_data['sid']
+    sid = request.sid
+    print(handle,sid)
 
     task = {}
     task['handle'] = handle
     task['sid'] = sid
     
-    mq_scheduler.send_task(task)
+    #mq_scheduler.send_task(task)
 
     return make_response("", 200)
 
