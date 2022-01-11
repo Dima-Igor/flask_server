@@ -72,14 +72,18 @@ $(document).ready(function() {
 
 
     socket.on('run_task', function(data) {
-        //alert(data.msg)
         const submissions = jQuery.parseJSON(data);
         const statsResult = calcStats(submissions);
 
-
-        //alert(JSON.stringify(statsResult));
-        //socket.emit()
-
+        socket.emit('get_task_result', {
+            'solvedTasks': statsResult.solvedTasks,
+            'solvedRatedTasks': stats.solvedRatedTasks,
+            'sumRating': stats.sumRating,
+            'okCount': stats.okCount,
+            'waCount': stats.waCount,
+            'mlCount': stats.mlCount,
+            'tlCount': stats.tlCount
+        });
     })
 
 });
