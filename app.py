@@ -16,6 +16,7 @@ clients = set()
 cf_service_addr = "localhost:8090"
 grpc_channel = grpc.insecure_channel(cf_service_addr)
 
+
 #mq_scheduler = RabbitMQScheduler()
 
 
@@ -124,6 +125,17 @@ def make_task():
             break
         send_message('run_task', client_id=client_id,
                      data=json.dumps(submission_chunks[i]))
+
+    # пока не обработаны все блоки
+    global completed_chunks
+
+    completed_chunks = 0
+    while(completed_chunks < len(submission_chunks)):
+        waiting = 1
+
+    
+
+
 
     # submissions = get_all_submissions(handle)
     # for client_id in clients:
