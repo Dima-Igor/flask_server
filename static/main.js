@@ -76,7 +76,8 @@ $(document).ready(function() {
         const submissions = jQuery.parseJSON(data);
         const statsResult = calcStats(submissions);
 
-        alert(JSON.stringify(statsResult));
+
+        //alert(JSON.stringify(statsResult));
         //socket.emit()
 
     })

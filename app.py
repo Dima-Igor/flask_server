@@ -8,6 +8,7 @@ import grpc
 from rabbit_scheduler import RabbitMQScheduler
 from itertools import islice
 import time
+from chunk import ChunkStorage, Chunk
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*')
@@ -102,6 +103,9 @@ def add_task(data):
 
     return make_response("", 200)
 
+@socketio.on('get_task_result')
+def get_task_result(data):
+
 
 @app.post('/make_task')
 def make_task():
@@ -123,25 +127,16 @@ def make_task():
     for i, client_id in enumerate(clients):
         if i >= clients_count:
             break
+        
+        chunk = Chunk(client = client_id, body = submission_chunks[i])
+        ChunkStorage.registerChunk(chunk)
         send_message('run_task', client_id=client_id,
                      data=json.dumps(submission_chunks[i]))
 
     # пока не обработаны все блоки
-    global completed_chunks
-
     completed_chunks = 0
     while(completed_chunks < len(submission_chunks)):
         waiting = 1
-
-    
-
-
-
-    # submissions = get_all_submissions(handle)
-    # for client_id in clients:
-    #     send_message('run_task', client_id=client_id,
-    #                  data=json.dumps(submissions))
-    #     send_message('run_task', client_id=client_id, data=client_id)
 
     return make_response("", 200)
 
