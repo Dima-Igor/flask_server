@@ -11,8 +11,14 @@ $(document).ready(function() {
 
 
     function drawStats(stats) {
-        $('.solved-tasks').text(stats.handle);
-        $('.unsolved-tasks').text(stats.handle);
+        $('.solved-tasks').text(`Количество решенных задач: ${stats.solvedTasks}`);
+        $('.solved-rated').text(`Количество решенных рейтинговых задач: ${stats.solvedRatedTasks}`);
+        $('.average-rating').text(`Средний рейтинг решенных задач: ${stats.averageRating}`);
+        $('.ok-count').text(`Количество посылок со статусом ОК: ${stats.okCount}`);
+        $('.wa-count').text(`Количество посылок со статусом Wrong answer: ${stats.waCount}`);
+        $('.ml-count').text(`Количество посылок со статусом Memory limit: ${stats.mlCount}`);
+        $('.tl-count').text(`Количество посылок со статусом Time limit: ${stats.tlCount}`);
+
     };
 
     function calcStats(submissions) {
@@ -59,8 +65,8 @@ $(document).ready(function() {
     };
 
     socket.on('draw_stats', function(data) {
-        console.log(data);
-        //drawStats(data);
+        const stats = jQuery.parseJSON(data);
+        drawStats(stats);
         $('.stats-card').show();
     });
 
