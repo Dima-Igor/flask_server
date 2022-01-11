@@ -79,7 +79,7 @@ def split_submissions(submissions, clients_count):
     pass
 
 
-@app.post('add_task')
+@app.post('/add_task')
 def add_task():
     json_data = request.get_json()
 
@@ -101,12 +101,12 @@ def make_task():
     handle = json_data['handle']
     sid = json_data['sid']
 
-    submissions = get_all_submissions(handle)
+    # submissions = get_all_submissions(handle)
 
-    for client_id in clients:
-        send_message('run_task', client_id=client_id,
-                     data=json.dumps(submissions))
-        send_message('run_task', client_id=client_id, data=client_id)
+    # for client_id in clients:
+    #     send_message('run_task', client_id=client_id,
+    #                  data=json.dumps(submissions))
+    #     send_message('run_task', client_id=client_id, data=client_id)
 
     return make_response("", 200)
 
