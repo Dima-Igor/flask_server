@@ -19,10 +19,11 @@ socketio = SocketIO(app, cors_allowed_origins='*', async_mode = 'eventlet')
 clients = set()
 cf_service_addr = "localhost:8090"
 grpc_channel = grpc.insecure_channel(cf_service_addr)
+stub = submission_pb2_grpc.CodeforcesServiceStub(grpc_channel)
+mq_scheduler = RabbitMQScheduler()
 
 #for each task store user who want this task
 tasks_sid = {}
-mq_scheduler = RabbitMQScheduler()
 
 @socketio.on('connect')
 def handle_connect():
@@ -63,7 +64,7 @@ def index():
 
 
 def get_all_submissions(handle):
-    stub = submission_pb2_grpc.CodeforcesServiceStub(grpc_channel)
+    
     responses = stub.GetSubmissions(
         submission_pb2.SubmissionRequest(handle=handle))
 
@@ -118,10 +119,11 @@ def add_task(data):
     task['handle'] = handle
     task['sid'] = sid
     
-    mq_scheduler.send_task(task)
-
-    return make_response("", 200)
-
+    try:
+        mq_scheduler.send_task(task)
+    except Exception as e:
+        print(e)    
+        send_message('draw_stats',client_id=sid,data = json.dumps({"error": "Unable to reach RabbitMq, try again later"}))
 
 def merge_results(results):
     stats = {
@@ -181,14 +183,13 @@ def make_task():
     handle = json_data['handle']
     sid = json_data['sid']
 
-
     if sid not in clients:
         return make_response("Client not found",200)
 
     # handle if something went wrong
     status, submissions = get_all_submissions(handle)
     if not status:
-        send_message('draw_stats', client_id=sid, data=json.dumps({'error': submissions}))
+        send_message('draw_stats', client_id=sid, data=json.dumps({'error': "Unable to reach Codeforces service, try again later"}))
         return make_response(submissions, 200)
 
     if not submissions:
@@ -221,4 +222,5 @@ def make_task():
 
 
 if __name__ == '__main__':
-    socketio.run(app)
+    print("Server is listening on port 5000")
+    socketio.run(app, host = "0.0.0.0", port = 5000)
